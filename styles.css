@@ -280,8 +280,9 @@ canvas {
   }
 
   .controls button {
-    padding: 1rem 0.4rem;
-    font-size: 1.55rem;
+    padding: 1.28rem 0.5rem;
+    font-size: 1.9rem;
+    min-height: 72px;
   }
 
 }
