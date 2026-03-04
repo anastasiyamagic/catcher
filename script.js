@@ -10,26 +10,26 @@ if (!localStorage.getItem(LEADERBOARD_RESET_KEY)) {
 }
 
 const THEME = {
-  bgTop: "#0a0d12",
-  bgMid: "#121922",
-  bgBot: "#0e141d",
-  cloud: "rgba(176, 186, 201, 0.12)",
+  bgTop: "#090c12",
+  bgMid: "#141a23",
+  bgBot: "#0c1118",
+  cloud: "rgba(186, 196, 210, 0.11)",
   palmTrunk: "#0d1118",
   palmLeaf: "#131a23",
-  starRgb: "217, 225, 236",
-  glowRgb: "0, 213, 75",
-  skyline: "#18202b",
-  ground: "#0a0f16",
-  gridNear: "rgba(197, 209, 225, 0.12)",
-  gridFar: "rgba(197, 209, 225, 0.07)",
-  catchRgb: "166, 255, 231",
+  starRgb: "220, 227, 236",
+  glowRgb: "186, 196, 210",
+  skyline: "#1a2029",
+  ground: "#0a0e14",
+  gridNear: "rgba(206, 214, 226, 0.18)",
+  gridFar: "rgba(206, 214, 226, 0.1)",
+  catchRgb: "232, 238, 247",
   blockemon: {
-    hair: "#151922",
+    hair: "#161a22",
     black: "#090909",
-    skin: "#c99673",
-    shirt: "#2f3747",
-    beard: "#0f131b",
-    nose: "#b88261",
+    skin: "#c4a589",
+    shirt: "#5a6472",
+    beard: "#121720",
+    nose: "#ab8f76",
     bg: "#10172a",
   },
   dollar: {
@@ -58,8 +58,8 @@ const THEME = {
     dollar: "142, 255, 188",
     square: "225, 239, 255",
     card: "255, 220, 140",
-    miss: "255, 138, 138",
-    step: "184, 198, 216",
+    miss: "170, 178, 190",
+    step: "178, 188, 204",
   },
 };
 
@@ -86,14 +86,10 @@ const state = {
   player: {
     x: 450,
     y: 440,
-    groundY: 440,
     w: 80,
     h: 76,
     speed: 14,
     vx: 0,
-    vy: 0,
-    gravity: 0.9,
-    jumpPower: 13.8,
     accel: 1.1,
     drag: 0.84,
     maxSpeed: 17,
@@ -103,7 +99,7 @@ const state = {
   },
   items: [],
   particles: [],
-  keys: { left: false, right: false, up: false },
+  keys: { left: false, right: false },
   spawnEvery: 760,
   spawnCurrent: 760,
   lastSpawn: 0,
@@ -219,9 +215,7 @@ function resetGame() {
   state.lastFrame = 0;
   state.catchFlash = 0;
   state.player.x = (canvas.width - state.player.w) / 2;
-  state.player.y = state.player.groundY;
   state.player.vx = 0;
-  state.player.vy = 0;
   updateHud();
 }
 
@@ -282,7 +276,7 @@ function drawBackground(dt) {
   state.stars.forEach((star, idx) => {
     const flicker = 0.45 + 0.55 * Math.sin(state.animTime * 0.0015 + star.p);
     const drift = Math.sin(state.animTime * 0.0007 + idx) * 1.6;
-    ctx.fillStyle = `rgba(${THEME.starRgb}, ${0.07 + flicker * 0.12})`;
+    ctx.fillStyle = `rgba(${THEME.starRgb}, ${0.08 + flicker * 0.15})`;
     ctx.beginPath();
     ctx.arc(star.x + drift, star.y, star.r, 0, Math.PI * 2);
     ctx.fill();
@@ -296,7 +290,7 @@ function drawBackground(dt) {
     canvas.height * 0.24,
     canvas.width * 0.34
   );
-  glow.addColorStop(0, `rgba(${THEME.glowRgb}, 0.22)`);
+  glow.addColorStop(0, `rgba(${THEME.glowRgb}, 0.15)`);
   glow.addColorStop(1, `rgba(${THEME.glowRgb}, 0)`);
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -306,7 +300,7 @@ function drawBackground(dt) {
   const layerA = [58, 162, 286, 430, 598, 738];
   const layerB = [24, 138, 254, 400, 552, 700, 832];
 
-  ctx.strokeStyle = "rgba(210, 219, 232, 0.08)";
+  ctx.strokeStyle = "rgba(214, 222, 233, 0.11)";
   ctx.lineWidth = 1.1;
   layerA.forEach((baseX, idx) => {
     const x = (baseX + shift * (idx % 2 === 0 ? 0.2 : 0.28)) % (canvas.width + 120) - 60;
@@ -316,7 +310,7 @@ function drawBackground(dt) {
     ctx.stroke();
   });
 
-  ctx.strokeStyle = "rgba(210, 219, 232, 0.06)";
+  ctx.strokeStyle = "rgba(214, 222, 233, 0.08)";
   layerB.forEach((baseX, idx) => {
     const x = (baseX - shift * (idx % 2 === 0 ? 0.14 : 0.2)) % (canvas.width + 120) - 60;
     const y = 148 + (idx % 3) * 22;
@@ -331,7 +325,7 @@ function drawBackground(dt) {
     const tileW = 84 - bandIdx * 10;
     const gap = 22 - bandIdx * 3;
     const offset = (state.cloudOffset * (bandIdx + 1) * 0.9) % (tileW + gap);
-    ctx.fillStyle = bandIdx === 0 ? "rgba(34, 45, 60, 0.65)" : "rgba(26, 35, 48, 0.68)";
+    ctx.fillStyle = bandIdx === 0 ? "rgba(42, 51, 64, 0.62)" : "rgba(28, 35, 45, 0.66)";
     for (let x = -tileW; x < canvas.width + tileW; x += tileW + gap) {
       ctx.beginPath();
       ctx.roundRect(x + offset, y, tileW, 44, 10);
@@ -354,6 +348,14 @@ function drawBackground(dt) {
     ctx.moveTo(x, canvas.height * 0.4);
     ctx.lineTo(x, canvas.height);
     ctx.stroke();
+  }
+
+  // Subtle monochrome noise for texture depth.
+  ctx.fillStyle = "rgba(255, 255, 255, 0.035)";
+  for (let i = 0; i < 220; i += 1) {
+    const nx = (i * 37 + Math.floor(state.animTime * 0.12)) % canvas.width;
+    const ny = (i * 61 + Math.floor(state.animTime * 0.09)) % canvas.height;
+    ctx.fillRect(nx, ny, 1, 1);
   }
 }
 
@@ -834,8 +836,6 @@ function update(now) {
 
   state.player.vx = Math.max(-state.player.maxSpeed, Math.min(state.player.maxSpeed, state.player.vx));
   state.player.x += state.player.vx * dt;
-  state.player.vy += state.player.gravity * dt;
-  state.player.y += state.player.vy * dt;
 
   if (state.player.x < 0) {
     state.player.x = 0;
@@ -844,11 +844,6 @@ function update(now) {
   if (state.player.x > canvas.width - state.player.w) {
     state.player.x = canvas.width - state.player.w;
     state.player.vx = 0;
-  }
-
-  if (state.player.y >= state.player.groundY) {
-    state.player.y = state.player.groundY;
-    state.player.vy = 0;
   }
 
   spawnCollectible(now);
@@ -905,20 +900,9 @@ function setArrowState(code, value) {
   if (code === "ArrowRight") {
     state.keys.right = value;
   }
-  if (code === "ArrowUp") {
-    state.keys.up = value;
-  }
 }
 
 window.addEventListener("keydown", (event) => {
-  if (
-    event.code === "ArrowUp" &&
-    state.running &&
-    state.player.y >= state.player.groundY &&
-    state.player.vy === 0
-  ) {
-    state.player.vy = -state.player.jumpPower;
-  }
   setArrowState(event.code, true);
 });
 

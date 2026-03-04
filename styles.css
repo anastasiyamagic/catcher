@@ -1,22 +1,22 @@
 :root {
-  --bg-0: #0a0d12;
-  --bg-1: #10161f;
-  --bg-2: #1d2632;
-  --text-strong: #edf1f7;
-  --text-muted: rgb(189 199 212 / 84%);
-  --accent-cyan: #00d54b;
-  --accent-cyan-2: #7ce8a5;
-  --accent-gold: #e2e8f0;
-  --accent-pink: #6a7484;
-  --panel-border: rgb(203 213 225 / 20%);
-  --panel-fill-a: rgb(20 27 37 / 88%);
-  --panel-fill-b: rgb(26 35 47 / 70%);
-  --panel-strong-a: rgb(28 38 52 / 64%);
-  --panel-strong-b: rgb(18 26 38 / 74%);
-  --pill-bg: rgb(0 213 75 / 14%);
-  --pill-border: rgb(0 213 75 / 30%);
-  --new-row-border: rgb(124 232 165 / 48%);
-  --new-row-shadow: rgb(124 232 165 / 16%);
+  --bg-0: #050812;
+  --bg-1: #0f141c;
+  --bg-2: #1c232d;
+  --text-strong: #f1f4f8;
+  --text-muted: rgb(196 204 214 / 84%);
+  --accent-cyan: #f2f4f7;
+  --accent-cyan-2: #a7b0bb;
+  --accent-gold: #d8dee6;
+  --accent-pink: #8f98a4;
+  --panel-border: rgb(218 224 233 / 20%);
+  --panel-fill-a: rgb(17 22 29 / 88%);
+  --panel-fill-b: rgb(22 29 39 / 72%);
+  --panel-strong-a: rgb(24 32 43 / 66%);
+  --panel-strong-b: rgb(14 20 29 / 78%);
+  --pill-bg: rgb(220 227 236 / 14%);
+  --pill-border: rgb(220 227 236 / 30%);
+  --new-row-border: rgb(226 232 240 / 42%);
+  --new-row-shadow: rgb(226 232 240 / 14%);
   --font-body: "Space Grotesk", sans-serif;
   --font-brand: "Bungee", sans-serif;
   --font-ui: "JetBrains Mono", monospace;
@@ -31,8 +31,9 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   color: var(--text-strong);
-  background: radial-gradient(circle at 20% 10%, var(--bg-2) 0%, transparent 34%),
-    radial-gradient(circle at 82% 14%, #283344 0%, transparent 38%),
+  background: radial-gradient(circle at 20% 10%, var(--bg-2) 0%, transparent 36%),
+    radial-gradient(circle at 82% 14%, #2a323d 0%, transparent 40%),
+    radial-gradient(circle at 52% -10%, rgb(196 205 219 / 10%) 0%, transparent 36%),
     linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
   overflow-x: hidden;
   padding: 1rem 0 2rem;
@@ -51,14 +52,14 @@ body {
 .orb-a {
   top: -8rem;
   left: -8rem;
-  background: color-mix(in hsl, var(--accent-cyan), transparent 78%);
+  background: color-mix(in hsl, var(--accent-cyan), transparent 82%);
 }
 
 .orb-b {
   right: -10rem;
   bottom: -10rem;
   animation-delay: 2s;
-  background: color-mix(in hsl, var(--accent-pink), transparent 80%);
+  background: color-mix(in hsl, var(--accent-pink), transparent 84%);
 }
 
 .game-shell {
@@ -92,7 +93,7 @@ body {
 .brand-main {
   display: inline-block;
   color: var(--accent-cyan);
-  text-shadow: 0 0 14px rgb(0 213 75 / 28%);
+  text-shadow: 0 0 14px rgb(240 244 248 / 20%);
 }
 
 .brand-accent {
@@ -100,7 +101,7 @@ body {
   font-size: 0.68em;
   color: var(--accent-gold);
   letter-spacing: 0.07em;
-  text-shadow: 0 0 10px rgb(194 211 231 / 16%);
+  text-shadow: 0 0 10px rgb(216 224 232 / 14%);
 }
 
 .topbar .tagline {
@@ -192,7 +193,7 @@ canvas {
 .overlay button {
   justify-self: center;
   padding: 0.78rem 1.2rem;
-  color: #03180d;
+  color: #10151d;
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan-2));
 }
 
@@ -205,7 +206,7 @@ canvas {
 
 .controls button {
   padding: 0.9rem 0.6rem;
-  color: #03180d;
+  color: #10151d;
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan-2));
 }
 
@@ -275,7 +276,7 @@ canvas {
   font-weight: 600;
   padding: 0.46rem 0.5rem;
   border-radius: 0.65rem;
-  border: 1px solid rgb(128 216 255 / 20%);
+  border: 1px solid rgb(218 224 233 / 18%);
   background: linear-gradient(150deg, var(--panel-strong-a), var(--panel-strong-b));
 }
 
@@ -295,20 +296,20 @@ canvas {
   font-family: var(--font-ui);
   font-size: 0.68rem;
   font-weight: 700;
-  color: #03180d;
+  color: #121821;
   background: color-mix(in hsl, var(--accent-cyan), white 14%);
 }
 
 .rank-1 {
-  background: #9cf2bb;
+  background: #e9edf2;
 }
 
 .rank-2 {
-  background: #dbe7f3;
+  background: #d7dee6;
 }
 
 .rank-3 {
-  background: #c8d3df;
+  background: #c2c9d3;
 }
 
 .player-name {
