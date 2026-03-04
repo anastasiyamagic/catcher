@@ -1,16 +1,6 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const BEST_KEY = "mushroom-money-best";
-const LEADERBOARD_KEY = "mushroom-money-leaderboard";
-const LEADERBOARD_RESET_KEY = "mushroom-money-leaderboard-reset-v1";
-const FIREBASE_API_KEY = ""; // Firebase Web API Key
-const FIREBASE_PROJECT_ID = ""; // Firebase project id
-const FIREBASE_COLLECTION = "leaderboardScores";
-
-if (!localStorage.getItem(LEADERBOARD_RESET_KEY)) {
-  localStorage.removeItem(LEADERBOARD_KEY);
-  localStorage.setItem(LEADERBOARD_RESET_KEY, "1");
-}
 
 const THEME = {
   bgTop: "#090c12",
@@ -69,7 +59,6 @@ const THEME = {
 const scoreEl = document.getElementById("score");
 const bestEl = document.getElementById("best");
 const missedEl = document.getElementById("missed");
-const leaderboardListEl = document.getElementById("leaderboard-list");
 const overlay = document.getElementById("overlay");
 const overlayTitle = document.getElementById("overlay-title");
 const overlayMessage = document.getElementById("overlay-message");
@@ -84,10 +73,7 @@ const state = {
   running: false,
   score: 0,
   missed: 0,
-  lastEntryId: null,
-  playerName: "Guest",
   best: Number(localStorage.getItem(BEST_KEY) || 0),
-  leaderboard: JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]"),
   player: {
     x: 450,
     y: 440,
@@ -153,200 +139,6 @@ function applyResponsiveCanvas() {
   state.player.y = state.player.groundY;
   clampPlayerX();
   state.stars = makeStars(mobile ? 72 : 56);
-}
-
-function hasSharedBackend() {
-  return FIREBASE_API_KEY && FIREBASE_PROJECT_ID;
-}
-
-function toDisplayTime(value) {
-  if (!value) {
-    return "--:--";
-  }
-
-  const date = new Date(value);
-  if (!Number.isNaN(date.getTime())) {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  return String(value);
-}
-
-function normalizeLeaderboard(entries) {
-  return entries
-    .map((entry) => {
-      const rawName = String(entry.name || "Guest").trim();
-      const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
-      const score = Number(entry.score);
-      const date = toDisplayTime(entry.date || entry.created_at);
-      return { id: entry.id || null, name, score, date };
-    })
-    .filter((entry) => Number.isFinite(entry.score) && entry.score >= 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
-}
-
-async function fetchSharedLeaderboard() {
-  if (!hasSharedBackend()) {
-    return false;
-  }
-
-  try {
-    const endpoint =
-      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
-      `/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: FIREBASE_COLLECTION }],
-          orderBy: [
-            { field: { fieldPath: "score" }, direction: "DESCENDING" },
-            { field: { fieldPath: "createdAtMillis" }, direction: "ASCENDING" },
-          ],
-          limit: 8,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Shared leaderboard fetch failed: ${response.status}`);
-    }
-
-    const rows = await response.json();
-    const entries = rows
-      .map((row) => row.document)
-      .filter(Boolean)
-      .map((doc) => {
-        const fields = doc.fields || {};
-        return {
-          id: doc.name ? doc.name.split("/").pop() : null,
-          name: fields.name?.stringValue || "Guest",
-          score: Number(fields.score?.integerValue || 0),
-          date: fields.createdAt?.timestampValue || null,
-        };
-      });
-    state.leaderboard = normalizeLeaderboard(entries);
-    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
-    return true;
-  } catch (error) {
-    console.warn(error);
-    return false;
-  }
-}
-
-async function submitSharedScore(name, score) {
-  if (!hasSharedBackend()) {
-    return null;
-  }
-
-  const endpoint =
-    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
-    `/databases/(default)/documents/${FIREBASE_COLLECTION}?key=${FIREBASE_API_KEY}`;
-  const nowIso = new Date().toISOString();
-  const nowMs = Date.now();
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      fields: {
-        name: { stringValue: name },
-        score: { integerValue: String(score) },
-        createdAt: { timestampValue: nowIso },
-        createdAtMillis: { integerValue: String(nowMs) },
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Shared leaderboard submit failed: ${response.status}`);
-  }
-
-  const doc = await response.json();
-  return {
-    id: doc.name ? doc.name.split("/").pop() : null,
-  };
-}
-
-async function initLeaderboard() {
-  await fetchSharedLeaderboard();
-  renderLeaderboard();
-}
-
-function renderLeaderboard() {
-  state.leaderboard = normalizeLeaderboard(state.leaderboard);
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
-  leaderboardListEl.innerHTML = "";
-
-  if (state.leaderboard.length === 0) {
-    const li = document.createElement("li");
-    li.className = "empty-row";
-    li.textContent = "Play a round to set your first record.";
-    leaderboardListEl.append(li);
-    return;
-  }
-
-  state.leaderboard.forEach((entry, idx) => {
-    const li = document.createElement("li");
-    if (entry.id && entry.id === state.lastEntryId) {
-      li.classList.add("is-new");
-    }
-
-    const main = document.createElement("div");
-    main.className = "leader-main";
-
-    const rank = document.createElement("span");
-    rank.className = `rank-badge rank-${Math.min(idx + 1, 3)}`;
-    rank.textContent = String(idx + 1);
-
-    const name = document.createElement("span");
-    name.className = "player-name";
-    name.textContent = entry.name;
-
-    main.append(rank, name);
-
-    const score = document.createElement("span");
-    score.className = "score-pill";
-    score.textContent = `${entry.score} pts`;
-
-    const time = document.createElement("span");
-    time.className = "run-time";
-    time.textContent = entry.date || "--:--";
-
-    li.append(main, score, time);
-    leaderboardListEl.append(li);
-  });
-}
-
-async function recordScore(score) {
-  const now = new Date();
-  const date = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const rawName = String(state.playerName || "Guest").trim();
-  const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
-
-  if (hasSharedBackend()) {
-    try {
-      const inserted = await submitSharedScore(name, score);
-      state.lastEntryId = inserted?.id || null;
-      await fetchSharedLeaderboard();
-      renderLeaderboard();
-      return;
-    } catch (error) {
-      console.warn(error);
-    }
-  }
-
-  const entryId = `local-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-  state.leaderboard.push({ id: entryId, name, score, date });
-  state.leaderboard = normalizeLeaderboard(state.leaderboard);
-  state.lastEntryId = entryId;
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
-  renderLeaderboard();
 }
 
 function updateHud() {
@@ -995,7 +787,6 @@ function renderWorld(dt) {
 function endGame() {
   state.running = false;
   cancelAnimationFrame(state.rafId);
-  void recordScore(state.score);
   overlayTitle.textContent = "Round Over";
   overlayMessage.textContent = `You scored ${state.score} points. Catch cards for 10x points.`;
   startBtn.textContent = "Play Again";
@@ -1099,9 +890,6 @@ function update(now) {
 }
 
 function startGame() {
-  const askedName = window.prompt("Enter your username for the leaderboard:", state.playerName);
-  const cleanedName = (askedName || "").trim();
-  state.playerName = cleanedName || "Guest";
   ensureAudioReady();
   resetGame();
   state.running = true;
@@ -1152,4 +940,3 @@ applyResponsiveCanvas();
 drawBackground(0);
 drawBlockemon();
 updateHud();
-void initLeaderboard();
