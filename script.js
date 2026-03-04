@@ -3,6 +3,9 @@ const ctx = canvas.getContext("2d");
 const BEST_KEY = "mushroom-money-best";
 const LEADERBOARD_KEY = "mushroom-money-leaderboard";
 const LEADERBOARD_RESET_KEY = "mushroom-money-leaderboard-reset-v1";
+const FIREBASE_API_KEY = ""; // Firebase Web API Key
+const FIREBASE_PROJECT_ID = ""; // Firebase project id
+const FIREBASE_COLLECTION = "leaderboardScores";
 
 if (!localStorage.getItem(LEADERBOARD_RESET_KEY)) {
   localStorage.removeItem(LEADERBOARD_KEY);
@@ -75,6 +78,8 @@ const startBtn = document.getElementById("start-btn");
 const leftBtn = document.getElementById("left-btn");
 const rightBtn = document.getElementById("right-btn");
 
+let audioCtx = null;
+
 const state = {
   running: false,
   score: 0,
@@ -107,6 +112,9 @@ const state = {
   gameTime: 0,
   shake: 0,
   hitStop: 0,
+  stepTimer: 0,
+  stepToggle: false,
+  audioReady: false,
   rafId: null,
   lastFrame: 0,
   cloudOffset: 0,
@@ -122,18 +130,127 @@ const state = {
 
 bestEl.textContent = String(state.best);
 
+function hasSharedBackend() {
+  return FIREBASE_API_KEY && FIREBASE_PROJECT_ID;
+}
+
+function toDisplayTime(value) {
+  if (!value) {
+    return "--:--";
+  }
+
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  return String(value);
+}
+
 function normalizeLeaderboard(entries) {
   return entries
     .map((entry) => {
       const rawName = String(entry.name || "Guest").trim();
       const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
       const score = Number(entry.score);
-      const date = entry.date ? String(entry.date) : "--:--";
+      const date = toDisplayTime(entry.date || entry.created_at);
       return { id: entry.id || null, name, score, date };
     })
     .filter((entry) => Number.isFinite(entry.score) && entry.score >= 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 8);
+}
+
+async function fetchSharedLeaderboard() {
+  if (!hasSharedBackend()) {
+    return false;
+  }
+
+  try {
+    const endpoint =
+      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
+      `/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: FIREBASE_COLLECTION }],
+          orderBy: [
+            { field: { fieldPath: "score" }, direction: "DESCENDING" },
+            { field: { fieldPath: "createdAtMillis" }, direction: "ASCENDING" },
+          ],
+          limit: 8,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Shared leaderboard fetch failed: ${response.status}`);
+    }
+
+    const rows = await response.json();
+    const entries = rows
+      .map((row) => row.document)
+      .filter(Boolean)
+      .map((doc) => {
+        const fields = doc.fields || {};
+        return {
+          id: doc.name ? doc.name.split("/").pop() : null,
+          name: fields.name?.stringValue || "Guest",
+          score: Number(fields.score?.integerValue || 0),
+          date: fields.createdAt?.timestampValue || null,
+        };
+      });
+    state.leaderboard = normalizeLeaderboard(entries);
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
+    return true;
+  } catch (error) {
+    console.warn(error);
+    return false;
+  }
+}
+
+async function submitSharedScore(name, score) {
+  if (!hasSharedBackend()) {
+    return null;
+  }
+
+  const endpoint =
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
+    `/databases/(default)/documents/${FIREBASE_COLLECTION}?key=${FIREBASE_API_KEY}`;
+  const nowIso = new Date().toISOString();
+  const nowMs = Date.now();
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fields: {
+        name: { stringValue: name },
+        score: { integerValue: String(score) },
+        createdAt: { timestampValue: nowIso },
+        createdAtMillis: { integerValue: String(nowMs) },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Shared leaderboard submit failed: ${response.status}`);
+  }
+
+  const doc = await response.json();
+  return {
+    id: doc.name ? doc.name.split("/").pop() : null,
+  };
+}
+
+async function initLeaderboard() {
+  await fetchSharedLeaderboard();
+  renderLeaderboard();
 }
 
 function renderLeaderboard() {
@@ -181,12 +298,25 @@ function renderLeaderboard() {
   });
 }
 
-function recordScore(score) {
+async function recordScore(score) {
   const now = new Date();
   const date = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const entryId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const rawName = String(state.playerName || "Guest").trim();
   const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
+
+  if (hasSharedBackend()) {
+    try {
+      const inserted = await submitSharedScore(name, score);
+      state.lastEntryId = inserted?.id || null;
+      await fetchSharedLeaderboard();
+      renderLeaderboard();
+      return;
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+
+  const entryId = `local-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   state.leaderboard.push({ id: entryId, name, score, date });
   state.leaderboard = normalizeLeaderboard(state.leaderboard);
   state.lastEntryId = entryId;
@@ -200,6 +330,52 @@ function updateHud() {
   missedEl.textContent = String(state.missed);
 }
 
+function ensureAudioReady() {
+  if (state.audioReady) {
+    return true;
+  }
+
+  try {
+    audioCtx = audioCtx || new window.AudioContext();
+    if (audioCtx.state === "suspended") {
+      void audioCtx.resume();
+    }
+    state.audioReady = true;
+    return true;
+  } catch (error) {
+    console.warn("Audio unavailable", error);
+    return false;
+  }
+}
+
+function playFootstep(strength = 1) {
+  if (!state.audioReady || !audioCtx) {
+    return;
+  }
+
+  const now = audioCtx.currentTime;
+  const gain = audioCtx.createGain();
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+
+  osc.type = "triangle";
+  osc.frequency.value = state.stepToggle ? 150 : 176;
+  filter.type = "lowpass";
+  filter.frequency.value = 620;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.05 * strength, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(now);
+  osc.stop(now + 0.09);
+  state.stepToggle = !state.stepToggle;
+}
+
 function resetGame() {
   state.score = 0;
   state.missed = 0;
@@ -211,6 +387,7 @@ function resetGame() {
   state.gameTime = 0;
   state.shake = 0;
   state.hitStop = 0;
+  state.stepTimer = 0;
   state.lastSpawn = 0;
   state.lastFrame = 0;
   state.catchFlash = 0;
@@ -792,7 +969,7 @@ function renderWorld(dt) {
 function endGame() {
   state.running = false;
   cancelAnimationFrame(state.rafId);
-  recordScore(state.score);
+  void recordScore(state.score);
   overlayTitle.textContent = "Round Over";
   overlayMessage.textContent = `You scored ${state.score} points. Catch cards for 10x points.`;
   startBtn.textContent = "Play Again";
@@ -846,6 +1023,18 @@ function update(now) {
     state.player.vx = 0;
   }
 
+  const moving = Math.abs(state.player.vx) > 0.9;
+  if (moving) {
+    state.stepTimer += dt * 16.67;
+    const cadenceMs = Math.max(95, 150 - Math.abs(state.player.vx) * 2.2);
+    if (state.stepTimer >= cadenceMs) {
+      state.stepTimer = 0;
+      playFootstep(Math.min(1.2, 0.65 + Math.abs(state.player.vx) / state.player.maxSpeed));
+    }
+  } else {
+    state.stepTimer = 0;
+  }
+
   spawnCollectible(now);
 
   state.items.forEach((item) => {
@@ -887,6 +1076,7 @@ function startGame() {
   const askedName = window.prompt("Enter your username for the leaderboard:", state.playerName);
   const cleanedName = (askedName || "").trim();
   state.playerName = cleanedName || "Guest";
+  ensureAudioReady();
   resetGame();
   state.running = true;
   overlay.classList.add("hidden");
@@ -903,6 +1093,7 @@ function setArrowState(code, value) {
 }
 
 window.addEventListener("keydown", (event) => {
+  ensureAudioReady();
   setArrowState(event.code, true);
 });
 
@@ -933,4 +1124,4 @@ startBtn.addEventListener("click", startGame);
 drawBackground(0);
 drawBlockemon();
 updateHud();
-renderLeaderboard();
+void initLeaderboard();
