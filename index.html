@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mushroom Money Catcher</title>
+    <title>Blockemon Catcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Bebas+Neue&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -18,8 +18,14 @@
 
     <main class="game-shell">
       <header class="topbar">
-        <h1>Mushroom Money Catcher</h1>
-        <p>Move with arrow keys, catch dollar tokens, and grab animal-print bonus cards for 10x points.</p>
+        <p class="brand-kicker">Arcade Mode</p>
+        <h1>
+          <span class="brand-main">Blockemon</span>
+          <span class="brand-accent">Catcher</span>
+        </h1>
+        <p class="tagline">
+          Move with arrow keys.
+        </p>
       </header>
 
       <section class="hud" aria-label="Game status">
@@ -29,7 +35,7 @@
       </section>
 
       <section class="arena-wrap">
-        <canvas id="game" width="900" height="520" aria-label="Mushroom dollar catcher game"></canvas>
+        <canvas id="game" width="900" height="520" aria-label="Blockemon cash catcher game"></canvas>
         <div id="overlay" class="overlay">
           <h2 id="overlay-title">Ready?</h2>
           <p id="overlay-message">Use Left and Right arrows. Catch green animal-print cards for 10x points.</p>
@@ -43,7 +49,15 @@
       </section>
 
       <section class="scoreboard" aria-label="Leaderboard scoreboard">
-        <h2>Leaderboard</h2>
+        <div class="scoreboard-top">
+          <h2>Leaderboard</h2>
+          <p>Top 8 local runs</p>
+        </div>
+        <div class="leaderboard-head" aria-hidden="true">
+          <span>Rank / Player</span>
+          <span>Score</span>
+          <span>Time</span>
+        </div>
         <ol id="leaderboard-list"></ol>
       </section>
     </main>
