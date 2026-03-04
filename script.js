@@ -1,5 +1,13 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const BEST_KEY = "mushroom-money-best";
+const LEADERBOARD_KEY = "mushroom-money-leaderboard";
+const LEADERBOARD_RESET_KEY = "mushroom-money-leaderboard-reset-v1";
+
+if (!localStorage.getItem(LEADERBOARD_RESET_KEY)) {
+  localStorage.removeItem(LEADERBOARD_KEY);
+  localStorage.setItem(LEADERBOARD_RESET_KEY, "1");
+}
 
 const THEME = {
   bgTop: "#0a0d12",
@@ -73,8 +81,8 @@ const state = {
   missed: 0,
   lastEntryId: null,
   playerName: "Guest",
-  best: Number(localStorage.getItem("mushroom-money-best") || 0),
-  leaderboard: JSON.parse(localStorage.getItem("mushroom-money-leaderboard") || "[]"),
+  best: Number(localStorage.getItem(BEST_KEY) || 0),
+  leaderboard: JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]"),
   player: {
     x: 450,
     y: 440,
@@ -118,13 +126,29 @@ const state = {
 
 bestEl.textContent = String(state.best);
 
+function normalizeLeaderboard(entries) {
+  return entries
+    .map((entry) => {
+      const rawName = String(entry.name || "Guest").trim();
+      const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
+      const score = Number(entry.score);
+      const date = entry.date ? String(entry.date) : "--:--";
+      return { id: entry.id || null, name, score, date };
+    })
+    .filter((entry) => Number.isFinite(entry.score) && entry.score >= 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+}
+
 function renderLeaderboard() {
+  state.leaderboard = normalizeLeaderboard(state.leaderboard);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
   leaderboardListEl.innerHTML = "";
 
   if (state.leaderboard.length === 0) {
     const li = document.createElement("li");
     li.className = "empty-row";
-    li.textContent = "No scores yet. Start playing.";
+    li.textContent = "Play a round to set your first record.";
     leaderboardListEl.append(li);
     return;
   }
@@ -144,7 +168,7 @@ function renderLeaderboard() {
 
     const name = document.createElement("span");
     name.className = "player-name";
-    name.textContent = entry.name || "Guest";
+    name.textContent = entry.name;
 
     main.append(rank, name);
 
@@ -154,7 +178,7 @@ function renderLeaderboard() {
 
     const time = document.createElement("span");
     time.className = "run-time";
-    time.textContent = entry.date;
+    time.textContent = entry.date || "--:--";
 
     li.append(main, score, time);
     leaderboardListEl.append(li);
@@ -165,11 +189,12 @@ function recordScore(score) {
   const now = new Date();
   const date = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const entryId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-  state.leaderboard.push({ id: entryId, name: state.playerName, score, date });
-  state.leaderboard.sort((a, b) => b.score - a.score);
-  state.leaderboard = state.leaderboard.slice(0, 8);
+  const rawName = String(state.playerName || "Guest").trim();
+  const name = rawName.length > 16 ? `${rawName.slice(0, 15)}…` : rawName || "Guest";
+  state.leaderboard.push({ id: entryId, name, score, date });
+  state.leaderboard = normalizeLeaderboard(state.leaderboard);
   state.lastEntryId = entryId;
-  localStorage.setItem("mushroom-money-leaderboard", JSON.stringify(state.leaderboard));
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(state.leaderboard));
   renderLeaderboard();
 }
 
@@ -849,7 +874,7 @@ function update(now) {
 
   if (state.score > state.best) {
     state.best = state.score;
-    localStorage.setItem("mushroom-money-best", String(state.best));
+    localStorage.setItem(BEST_KEY, String(state.best));
   }
 
   renderWorld(dt);

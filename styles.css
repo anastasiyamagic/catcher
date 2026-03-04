@@ -214,7 +214,7 @@ canvas {
   border: 1px solid var(--panel-border);
   border-radius: 1rem;
   background: linear-gradient(165deg, var(--panel-fill-a), var(--panel-fill-b));
-  padding: 0.9rem 1rem;
+  padding: 0.95rem 1rem 1rem;
 }
 
 .scoreboard-top {
@@ -234,40 +234,46 @@ canvas {
 .scoreboard-top p {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
 .leaderboard-head {
-  margin-top: 0.55rem;
+  margin-top: 0.6rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 0.7rem;
+  gap: 0.55rem;
   font-family: var(--font-ui);
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding: 0.3rem 0.45rem;
+  padding: 0.25rem 0.45rem 0.4rem;
+  border-bottom: 1px solid rgb(203 213 225 / 14%);
+}
+
+.leaderboard-head span:nth-child(2),
+.leaderboard-head span:nth-child(3) {
+  text-align: right;
 }
 
 #leaderboard-list {
-  margin: 0;
+  margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.38rem;
 }
 
 #leaderboard-list li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.55rem;
   font-weight: 600;
-  padding: 0.42rem 0.45rem;
+  padding: 0.46rem 0.5rem;
   border-radius: 0.65rem;
   border: 1px solid rgb(128 216 255 / 20%);
   background: linear-gradient(150deg, var(--panel-strong-a), var(--panel-strong-b));
@@ -281,8 +287,8 @@ canvas {
 }
 
 .rank-badge {
-  min-width: 1.45rem;
-  height: 1.45rem;
+  min-width: 1.35rem;
+  height: 1.35rem;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -307,7 +313,7 @@ canvas {
 
 .player-name {
   font-family: var(--font-ui);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -315,19 +321,21 @@ canvas {
 
 .score-pill {
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   background: var(--pill-bg);
   border: 1px solid var(--pill-border);
   border-radius: 999px;
-  padding: 0.18rem 0.55rem;
+  padding: 0.16rem 0.5rem;
   white-space: nowrap;
+  text-align: right;
 }
 
 .run-time {
   font-family: var(--font-ui);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   white-space: nowrap;
+  text-align: right;
 }
 
 #leaderboard-list li.is-new {
@@ -338,7 +346,11 @@ canvas {
 
 #leaderboard-list li.empty-row {
   grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+  padding: 0.65rem 0.5rem;
   color: var(--text-muted);
+  border-style: dashed;
 }
 
 @media (max-width: 600px) {
