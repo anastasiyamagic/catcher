@@ -35,17 +35,21 @@ const THEME = {
     inner: "#05070a",
   },
   card: {
-    aura: "rgba(255, 205, 118, 0.78)",
-    auraStroke: "rgba(255, 205, 118, 0.82)",
-    body: "#120906",
-    overlay: "rgba(255, 255, 255, 0.05)",
-    chipA: "#e3cf92",
-    chipB: "#b59a60",
-    chipStroke: "rgba(130, 108, 58, 0.68)",
-    textTop: "#c6b066",
-    textBottom: "#f3e4b9",
-    spotA: "rgba(172, 86, 56, 0.86)",
-    spotB: "rgba(137, 56, 35, 0.82)",
+    aura: "rgba(247, 173, 120, 0.4)",
+    auraStroke: "rgba(247, 203, 158, 0.6)",
+    body: "#140b09",
+    bodyDeep: "#080505",
+    overlay: "rgba(255, 255, 255, 0.06)",
+    sheen: "rgba(255, 228, 196, 0.16)",
+    chipA: "#ebddaa",
+    chipB: "#c4ae74",
+    chipStroke: "rgba(136, 113, 58, 0.68)",
+    textTop: "#e7c07a",
+    textBottom: "#d9b170",
+    patchA: "rgba(194, 103, 66, 0.84)",
+    patchB: "rgba(156, 70, 45, 0.8)",
+    patchC: "rgba(112, 46, 30, 0.76)",
+    weave: "rgba(22, 12, 10, 0.82)",
   },
   particles: {
     dollar: "142, 255, 188",
@@ -616,7 +620,10 @@ function drawAnimalCard(item) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  ctx.fillStyle = THEME.card.body;
+  const bodyGrad = ctx.createLinearGradient(-cardW / 2, -cardH / 2, cardW / 2, cardH / 2);
+  bodyGrad.addColorStop(0, THEME.card.body);
+  bodyGrad.addColorStop(1, THEME.card.bodyDeep);
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
   ctx.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius);
   ctx.fill();
@@ -626,17 +633,35 @@ function drawAnimalCard(item) {
   ctx.roundRect(-cardW / 2 + 2, -cardH / 2 + 2, cardW - 4, cardH - 4, radius - 2);
   ctx.fill();
 
-  item.spots.forEach((spot) => {
-    ctx.fillStyle = spot.color;
+  item.patches.forEach((patch) => {
+    ctx.fillStyle = patch.color;
     ctx.beginPath();
-    ctx.ellipse(spot.x, spot.y, spot.rx, spot.ry, spot.rot, 0, Math.PI * 2);
+    ctx.ellipse(patch.x, patch.y, patch.rx, patch.ry, patch.rot, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  const chipW = cardW * 0.22;
-  const chipH = cardH * 0.22;
-  const chipX = -cardW * 0.36;
-  const chipY = -cardH * 0.05;
+  ctx.strokeStyle = THEME.card.weave;
+  ctx.lineCap = "round";
+  item.weaves.forEach((line) => {
+    ctx.lineWidth = line.w;
+    ctx.beginPath();
+    ctx.moveTo(line.x1, line.y1);
+    ctx.bezierCurveTo(line.cx1, line.cy1, line.cx2, line.cy2, line.x2, line.y2);
+    ctx.stroke();
+  });
+
+  const sheen = ctx.createLinearGradient(-cardW * 0.5, -cardH * 0.45, cardW * 0.35, cardH * 0.15);
+  sheen.addColorStop(0, THEME.card.sheen);
+  sheen.addColorStop(1, "rgba(255, 255, 255, 0)");
+  ctx.fillStyle = sheen;
+  ctx.beginPath();
+  ctx.roundRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW - 6, cardH * 0.44, radius - 3);
+  ctx.fill();
+
+  const chipW = cardW * 0.2;
+  const chipH = cardH * 0.26;
+  const chipX = -cardW * 0.38;
+  const chipY = -cardH * 0.08;
   const chipGrad = ctx.createLinearGradient(chipX, chipY, chipX + chipW, chipY + chipH);
   chipGrad.addColorStop(0, THEME.card.chipA);
   chipGrad.addColorStop(1, THEME.card.chipB);
@@ -655,16 +680,22 @@ function drawAnimalCard(item) {
   ctx.stroke();
 
   ctx.fillStyle = THEME.card.textTop;
-  ctx.font = `600 ${Math.max(10, Math.floor(cardH * 0.17))}px Space Grotesk`;
+  ctx.font = `700 ${Math.max(11, Math.floor(cardH * 0.16))}px Space Grotesk`;
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
-  ctx.fillText("$ree", cardW * 0.4, -cardH * 0.36);
+  ctx.fillText("$reesehills", cardW * 0.41, -cardH * 0.37);
 
   ctx.fillStyle = THEME.card.textBottom;
-  ctx.font = `700 ${Math.max(11, Math.floor(cardH * 0.2))}px Space Grotesk`;
-  ctx.textAlign = "center";
+  ctx.font = `600 ${Math.max(9, Math.floor(cardH * 0.12))}px Space Grotesk`;
+  ctx.textAlign = "right";
   ctx.textBaseline = "middle";
-  ctx.fillText("10x", 0, cardH * 0.32);
+  ctx.fillText("Cash Card", cardW * 0.41, cardH * 0.35);
+
+  ctx.fillStyle = THEME.card.textTop;
+  ctx.font = `700 ${Math.max(14, Math.floor(cardH * 0.36))}px Space Grotesk`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("$", -cardW * 0.42, cardH * 0.28);
   ctx.restore();
 }
 
@@ -691,14 +722,51 @@ function spawnCollectible(now) {
     const w = 118 + Math.random() * 30;
     const h = w * 0.64;
     const x = Math.random() * (canvas.width - w);
-    const spots = Array.from({ length: 12 }, () => ({
-      x: -w * 0.35 + Math.random() * w * 0.7,
-      y: -h * 0.33 + Math.random() * h * 0.66,
-      rx: 10 + Math.random() * 16,
-      ry: 8 + Math.random() * 14,
-      rot: Math.random(),
-      color: Math.random() > 0.5 ? THEME.card.spotA : THEME.card.spotB,
-    }));
+    const colors = [THEME.card.patchA, THEME.card.patchB, THEME.card.patchC];
+    const patchLayout = [
+      [-0.34, -0.34, 0.12, 0.1, 0.4],
+      [-0.08, -0.31, 0.12, 0.11, 1.2],
+      [0.19, -0.28, 0.11, 0.1, 0.8],
+      [0.39, -0.08, 0.1, 0.12, 1.1],
+      [0.06, -0.03, 0.13, 0.12, 0.2],
+      [-0.22, 0.01, 0.1, 0.11, 2.3],
+      [-0.41, 0.2, 0.12, 0.1, 1.8],
+      [-0.09, 0.23, 0.12, 0.11, 0.9],
+      [0.22, 0.24, 0.11, 0.1, 0.4],
+      [0.36, 0.27, 0.1, 0.09, 1.7],
+      [-0.29, 0.28, 0.11, 0.09, 1.1],
+      [0.04, -0.2, 0.09, 0.08, 2.5],
+    ];
+    const patches = patchLayout.map(([px, py, prx, pry, rot]) => {
+      const jitterX = (Math.random() - 0.5) * w * 0.04;
+      const jitterY = (Math.random() - 0.5) * h * 0.05;
+      const scale = 0.88 + Math.random() * 0.16;
+      return {
+        x: px * w + jitterX,
+        y: py * h + jitterY,
+        rx: prx * w * scale,
+        ry: pry * h * scale,
+        rot: rot + (Math.random() - 0.5) * 0.22,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      };
+    });
+    const weaves = Array.from({ length: 6 }, () => {
+      const x1 = -w * 0.5 + Math.random() * w;
+      const x2 = -w * 0.5 + Math.random() * w;
+      const y1 = -h * 0.38 + Math.random() * h * 0.78;
+      const y2 = -h * 0.38 + Math.random() * h * 0.78;
+      return {
+        x1,
+        y1,
+        x2,
+        y2,
+        cx1: x1 + (Math.random() - 0.5) * w * 0.32,
+        cy1: y1 + (Math.random() - 0.5) * h * 0.3,
+        cx2: x2 + (Math.random() - 0.5) * w * 0.32,
+        cy2: y2 + (Math.random() - 0.5) * h * 0.3,
+        w: 1.8 + Math.random() * 3.4,
+      };
+    });
 
     state.items.push({
       kind: "card",
@@ -709,7 +777,8 @@ function spawnCollectible(now) {
       speed: 1.8 + Math.random() * 1 + state.speedBoost * 0.78,
       tilt: (Math.random() - 0.5) * 0.18,
       points: 10,
-      spots,
+      patches,
+      weaves,
     });
     return;
   }

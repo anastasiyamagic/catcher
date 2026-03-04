@@ -275,7 +275,8 @@ canvas {
   }
 
   .controls {
-    margin-top: 0.7rem;
+    margin-top: 1.15rem;
+    padding-bottom: calc(0.4rem + env(safe-area-inset-bottom));
   }
 
   .controls button {
