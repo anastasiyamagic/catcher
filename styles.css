@@ -188,6 +188,11 @@ canvas {
   text-transform: uppercase;
   font-weight: 700;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .overlay button {
@@ -208,6 +213,8 @@ canvas {
   padding: 0.9rem 0.6rem;
   color: #10151d;
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan-2));
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 .scoreboard {
@@ -363,6 +370,86 @@ canvas {
   .run-time,
   .leaderboard-head span:last-child {
     display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    padding: 0.55rem 0 1rem;
+  }
+
+  .game-shell {
+    width: min(100vw, 100%);
+    padding-inline: 0.52rem;
+  }
+
+  .brand-kicker {
+    margin-bottom: 0.2rem;
+    font-size: 0.6rem;
+  }
+
+  .topbar h1 {
+    font-size: clamp(1.55rem, 8.6vw, 2.5rem);
+    gap: 0.12rem;
+  }
+
+  .topbar .tagline {
+    margin-top: 0.15rem;
+    font-size: 0.74rem;
+    opacity: 0.82;
+  }
+
+  .hud {
+    margin-top: 0.55rem;
+    gap: 0.45rem;
+  }
+
+  .hud div {
+    padding: 0.5rem 0.58rem;
+  }
+
+  .label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hud strong {
+    font-size: 1rem;
+  }
+
+  .arena-wrap {
+    margin-top: 0.62rem;
+    border-radius: 0.75rem;
+  }
+
+  .overlay h2 {
+    font-size: clamp(1.5rem, 8vw, 2.5rem);
+  }
+
+  .overlay p {
+    font-size: 0.75rem;
+  }
+
+  .controls {
+    margin-top: 0.7rem;
+  }
+
+  .controls button {
+    padding: 1rem 0.4rem;
+    font-size: 1.55rem;
+  }
+
+  .scoreboard {
+    margin-top: 0.7rem;
+    padding: 0.72rem 0.75rem 0.8rem;
+  }
+
+  .scoreboard h2 {
+    font-size: 1.4rem;
+  }
+
+  .scoreboard-top p {
+    font-size: 0.6rem;
   }
 }
 

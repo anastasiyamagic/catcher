@@ -91,6 +91,7 @@ const state = {
   player: {
     x: 450,
     y: 440,
+    groundY: 440,
     w: 80,
     h: 76,
     speed: 14,
@@ -120,15 +121,39 @@ const state = {
   cloudOffset: 0,
   animTime: 0,
   catchFlash: 0,
-  stars: Array.from({ length: 56 }, () => ({
+  stars: [],
+};
+
+bestEl.textContent = String(state.best);
+
+function makeStars(count = 56) {
+  return Array.from({ length: count }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * (canvas.height * 0.55),
     r: 0.6 + Math.random() * 1.8,
     p: Math.random() * Math.PI * 2,
-  })),
-};
+  }));
+}
 
-bestEl.textContent = String(state.best);
+function clampPlayerX() {
+  state.player.x = Math.max(0, Math.min(canvas.width - state.player.w, state.player.x));
+}
+
+function applyResponsiveCanvas() {
+  const mobile = window.innerWidth <= 700;
+  if (mobile) {
+    canvas.width = 700;
+    canvas.height = 760;
+  } else {
+    canvas.width = 900;
+    canvas.height = 520;
+  }
+
+  state.player.groundY = canvas.height - state.player.h - 10;
+  state.player.y = state.player.groundY;
+  clampPlayerX();
+  state.stars = makeStars(mobile ? 72 : 56);
+}
 
 function hasSharedBackend() {
   return FIREBASE_API_KEY && FIREBASE_PROJECT_ID;
@@ -392,6 +417,7 @@ function resetGame() {
   state.lastFrame = 0;
   state.catchFlash = 0;
   state.player.x = (canvas.width - state.player.w) / 2;
+  state.player.y = state.player.groundY;
   state.player.vx = 0;
   updateHud();
 }
@@ -1120,7 +1146,9 @@ function bindTouchButton(button, side) {
 bindTouchButton(leftBtn, "left");
 bindTouchButton(rightBtn, "right");
 startBtn.addEventListener("click", startGame);
+window.addEventListener("resize", applyResponsiveCanvas);
 
+applyResponsiveCanvas();
 drawBackground(0);
 drawBlockemon();
 updateHud();
