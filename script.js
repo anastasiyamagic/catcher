@@ -985,16 +985,22 @@ window.addEventListener("keyup", (event) => {
 });
 
 function bindTouchButton(button, side) {
-  const down = () => {
+  const down = (event) => {
+    if (event) {
+      event.preventDefault();
+    }
     state.keys[side] = true;
   };
-  const up = () => {
+  const up = (event) => {
+    if (event) {
+      event.preventDefault();
+    }
     state.keys[side] = false;
   };
 
-  button.addEventListener("touchstart", down, { passive: true });
-  button.addEventListener("touchend", up, { passive: true });
-  button.addEventListener("touchcancel", up, { passive: true });
+  button.addEventListener("touchstart", down, { passive: false });
+  button.addEventListener("touchend", up, { passive: false });
+  button.addEventListener("touchcancel", up, { passive: false });
   button.addEventListener("mousedown", down);
   button.addEventListener("mouseup", up);
   button.addEventListener("mouseleave", up);
